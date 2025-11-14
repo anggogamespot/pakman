@@ -5,12 +5,13 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #000;
-    font-family: sans-serif;
+    font-family: 'Arial', sans-serif;
     flex-direction: column;
+    overflow: hidden; /* Mencegah scrolling pada ponsel */
 }
 
 .game-container {
-    border: 5px solid blue; /* Batas labirin */
+    border: 5px solid blue;
     background-color: black;
 }
 
@@ -24,33 +25,33 @@ body {
     font-size: 1.5em;
     text-align: center;
 }
-/* Sembunyikan Kontroler Secara Default */
+
+/* --- STYLING KONTROL MOBILE (PENTING!) --- */
+
 .mobile-controls {
-    display: none; /* Akan kita tampilkan hanya di layar kecil */
+    display: none; /* Sembunyikan di desktop */
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 1000; /* Pastikan di atas elemen lain */
-    opacity: 0.9; /* Sedikit transparan */
+    z-index: 1000;
+    opacity: 0.85;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.5); /* Latar belakang semi-transparan */
     border-radius: 10px;
 }
 
-/* Penempatan Tombol */
 .control-btn {
     width: 60px;
     height: 60px;
     font-size: 24px;
-    background-color: #333;
+    background-color: #444;
     color: white;
-    border: 2px solid #666;
-    border-radius: 50%; /* Membuat tombol bulat */
+    border: none;
+    border-radius: 50%;
     margin: 5px;
     display: block;
     cursor: pointer;
-    user-select: none; /* Mencegah teks terpilih saat disentuh */
-    touch-action: manipulation; /* Memperbaiki responsivitas sentuhan */
+    user-select: none;
+    touch-action: manipulation; /* Penting untuk respons sentuhan cepat */
 }
 
 .horizontal-btns {
@@ -58,9 +59,8 @@ body {
     justify-content: center;
 }
 
-/* Sembunyikan Kontroler Hanya pada Layar Besar (Desktop) */
-@media (max-width: 600px) {
-    /* Tampilkan Kontroler di Layar Ponsel */
+/* Media Query: Hanya tampilkan kontroler pada layar kecil (mobile) */
+@media (max-width: 768px) {
     .mobile-controls {
         display: flex;
         flex-direction: column;
