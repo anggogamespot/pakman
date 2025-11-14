@@ -24,3 +24,46 @@ body {
     font-size: 1.5em;
     text-align: center;
 }
+/* Sembunyikan Kontroler Secara Default */
+.mobile-controls {
+    display: none; /* Akan kita tampilkan hanya di layar kecil */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000; /* Pastikan di atas elemen lain */
+    opacity: 0.9; /* Sedikit transparan */
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5); /* Latar belakang semi-transparan */
+    border-radius: 10px;
+}
+
+/* Penempatan Tombol */
+.control-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    background-color: #333;
+    color: white;
+    border: 2px solid #666;
+    border-radius: 50%; /* Membuat tombol bulat */
+    margin: 5px;
+    display: block;
+    cursor: pointer;
+    user-select: none; /* Mencegah teks terpilih saat disentuh */
+    touch-action: manipulation; /* Memperbaiki responsivitas sentuhan */
+}
+
+.horizontal-btns {
+    display: flex;
+    justify-content: center;
+}
+
+/* Sembunyikan Kontroler Hanya pada Layar Besar (Desktop) */
+@media (max-width: 600px) {
+    /* Tampilkan Kontroler di Layar Ponsel */
+    .mobile-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
