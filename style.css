@@ -1,96 +1,11 @@
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #000;
-    font-family: 'Arial', sans-serif;
-    flex-direction: column;
-    overflow: hidden; 
-}
-
-.game-container {
-    border: 5px solid blue;
-    background-color: black;
-    z-index: 1; 
-}
-
-#pacman-canvas {
-    display: block;
-}
-
-#score {
-    color: yellow;
-    margin-top: 10px;
-    font-size: 1.5em;
+    background: #000;
+    color: #fff;
     text-align: center;
+    font-family: Arial, sans-serif;
 }
 
-/* --- FIX KONTROL MOBILE MENGAMBANG --- */
-
-.mobile-controls {
-    display: none; 
-    position: fixed; /* KUNCI: Membuatnya mengambang relatif terhadap viewport */
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000; 
-    opacity: 0.85;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 10px;
-    /* Tata letak D-Pad */
-    flex-direction: column;
-    align-items: center;
-}
-
-.control-btn {
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
-    background-color: #444;
-    color: white;
-    border: none;
-    border-radius: 50%; 
-    margin: 5px;
-    user-select: none;
-    touch-action: manipulation;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.horizontal-btns {
-    display: flex;
-    justify-content: space-between;
-    width: 100%; /* Agar tombol kiri-kanan terpisah */
-}
-
-/* Media Query: Tampilkan di mobile */
-@media (max-width: 768px) {
-    .mobile-controls {
-        display: flex; 
-    }
-}
-
-/* --- POPUP GAME OVER --- */
-#game-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 2000;
-    display: none; /* Kunci: Sembunyikan secara default */
-    justify-content: center;
-    align-items: center;
-}
-
-#popup-content {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    color: black;
+canvas {
+    border: 3px solid #fff;
+    margin-top: 20px;
 }
