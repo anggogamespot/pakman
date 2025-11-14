@@ -1,11 +1,15 @@
 const canvas = document.getElementById('pacman-canvas');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score');
+const overlay = document.getElementById('game-overlay');
+const finalScoreDisplay = document.getElementById('final-score');
 
 // --- KONFIGURASI GAME ---
-const TILE_SIZE = 30; // Ukuran satu ubin (tile) dalam piksel
-const GAME_FPS = 10; // Frame per second, kontrol kecepatan game
-const GHOST_SPEED_FACTOR = 0.8; // Kecepatan hantu relatif terhadap Pac-Man
+const TILE_SIZE = 30; 
+const GAME_FPS = 10; 
+let gameInterval; 
+let totalFood = 0; 
+let foodEaten = 0;
 
 // 0: Jalan Kosong, 1: Tembok, 2: Titik Makanan, 3: Pintu Keluar
 let maze = [
@@ -13,43 +17,23 @@ let maze = [
     [1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1],
     [1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1],
     [1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1],
-    [1, 2, 1, 2, 1, 1, 1, 0, 1, 1, 1, 2, 1, 2, 1], // 0 di tengah adalah area awal hantu
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 1], // 3 adalah pintu keluar
+    [1, 2, 1, 2, 1, 1, 1, 0, 1, 1, 1, 2, 1, 2, 1], // 0: Start Hantu
+    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 1], // 3: Pintu Keluar
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
-
-// Salinan maze awal untuk reset
 const initialMaze = JSON.parse(JSON.stringify(maze));
 
-// --- PAC-MAN & GAME STATE ---
-let pacman = {
-    x: 1, // kolom
-    y: 1, // baris
-    radius: TILE_SIZE / 2 - 2,
-    direction: 'right', // Arah saat ini
-    desiredDirection: 'right' // Arah yang diinginkan (untuk "cornering")
-};
-let score = 0;
-let totalFood = 0; // Untuk menghitung berapa banyak makanan yang ada
-
 // Hitung total makanan di awal
-for(let r=0; r < maze.length; r++) {
-    for(let c=0; c < maze[r].length; c++) {
-        if(maze[r][c] === 2) totalFood++;
-    }
-}
+initialMaze.forEach(row => row.forEach(tile => {
+    if(tile === 2) totalFood++;
+}));
 
-// --- HANTU MERAH (MUSUH) ---
-let ghost = {
-    x: 7, // kolom
-    y: 4, // baris
-    color: 'red',
-    direction: 'left', // Arah awal hantu
-    targetX: pacman.x,
-    targetY: pacman.y
-};
 
-let gameInterval; // Untuk menyimpan ID interval game loop
+// --- PAC-MAN & HANTU ---
+let pacman = { x: 1, y: 1, radius: TILE_SIZE / 2 - 2, direction: 'right', desiredDirection: 'right', speed: 1 };
+let ghost = { x: 7, y: 4, color: 'red', speed: 1 }; // Hantu Merah saja
+
+let score = 0;
 
 // --- FUNGSI MENGGAMBAR ---
 
@@ -63,13 +47,18 @@ function drawMaze() {
             if (tile === 1) { // Tembok
                 ctx.fillStyle = 'blue';
                 ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
-            } else if (tile === 2) { // Titik Makanan
+            } else if (tile === 2) { // Titik Makanan (Bola Putih)
+                // Bola Putih diabaikan hantu, tetapi dimakan Pac-Man
                 ctx.fillStyle = 'white';
                 ctx.beginPath();
                 ctx.arc(posX + TILE_SIZE / 2, posY + TILE_SIZE / 2, 3, 0, Math.PI * 2);
                 ctx.fill();
             } else if (tile === 3) { // Pintu Keluar
                 ctx.fillStyle = 'green';
+                ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
+            } else {
+                // Jalan kosong (0) harus digambar hitam
+                ctx.fillStyle = 'black';
                 ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
             }
         }
@@ -82,7 +71,6 @@ function drawPacman() {
     
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    // Gambar Pac-Man sebagai lingkaran penuh untuk kesederhanaan
     ctx.arc(center_x, center_y, pacman.radius, 0, Math.PI * 2);
     ctx.fill();
 }
@@ -94,36 +82,26 @@ function drawGhost() {
     
     ctx.fillStyle = ghost.color;
     
-    // Tubuh hantu
+    // Menggambar hantu merah
     ctx.beginPath();
-    ctx.arc(center_x, center_y, size / 2, Math.PI, 0, false); // Bagian atas bulat
-    ctx.rect(center_x - size / 2, center_y, size, size * 0.4); // Bagian bawah persegi
+    ctx.arc(center_x, center_y, size / 2, Math.PI, 0, false); 
+    ctx.rect(center_x - size / 2, center_y, size, size * 0.4); 
     ctx.fill();
 }
 
 // --- LOGIKA KONTROL MOBILE ---
 
 function handleDirectionChange(newDirection) {
-    // Periksa apakah arah yang diinginkan valid (tidak langsung menabrak tembok)
-    let nextX = pacman.x;
-    let nextY = pacman.y;
-
-    if (newDirection === 'up') nextY--;
-    else if (newDirection === 'down') nextY++;
-    else if (newDirection === 'left') nextX--;
-    else if (newDirection === 'right') nextX++;
-
-    // Jika arah baru tidak menabrak tembok, baru ubah desiredDirection
-    if (maze[nextY] && maze[nextY][nextX] !== 1) {
-        pacman.desiredDirection = newDirection;
-    }
+    // Memungkinkan Pac-Man untuk antri arah (desiredDirection)
+    pacman.desiredDirection = newDirection;
 }
 
 // Event listener untuk tombol kontrol
 const controlBtns = document.querySelectorAll('.mobile-controls .control-btn');
 controlBtns.forEach(btn => {
+    // Tambahkan touchstart untuk mobile
     btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        e.preventDefault(); 
         let direction = '';
         if (btn.id === 'up-btn') direction = 'up';
         else if (btn.id === 'down-btn') direction = 'down';
@@ -133,7 +111,7 @@ controlBtns.forEach(btn => {
             handleDirectionChange(direction);
         }
     });
-    // Juga tambahkan mousedown untuk pengujian di desktop
+    // Tambahkan mousedown untuk desktop
     btn.addEventListener('mousedown', () => {
         let direction = '';
         if (btn.id === 'up-btn') direction = 'up';
@@ -161,160 +139,137 @@ document.addEventListener('keydown', (e) => {
 });
 
 
-// --- LOGIKA GAME ---
+// --- LOGIKA UTAMA GAME ---
+
+function getNextPosition(obj, direction) {
+    let nextX = obj.x;
+    let nextY = obj.y;
+
+    if (direction === 'up') nextY--;
+    else if (direction === 'down') nextY++;
+    else if (direction === 'left') nextX--;
+    else if (direction === 'right') nextX++;
+
+    return { nextX, nextY };
+}
+
+function canMove(x, y) {
+    // Periksa batas dan tembok
+    if (y < 0 || y >= maze.length || x < 0 || x >= maze[0].length) return false;
+    return maze[y][x] !== 1;
+}
 
 function movePacman() {
-    let nextX = pacman.x;
-    let nextY = pacman.y;
+    let { nextX, nextY } = getNextPosition(pacman, pacman.desiredDirection);
 
-    // Coba bergerak sesuai desiredDirection terlebih dahulu
-    if (pacman.desiredDirection === 'up') nextY--;
-    else if (pacman.desiredDirection === 'down') nextY++;
-    else if (pacman.desiredDirection === 'left') nextX--;
-    else if (pacman.desiredDirection === 'right') nextX++;
-
-    // Jika desiredDirection valid, gunakan itu
-    if (maze[nextY] && maze[nextY][nextX] !== 1) {
+    // 1. Coba bergerak sesuai desiredDirection (memungkinkan belok di tikungan)
+    if (canMove(nextX, nextY)) {
         pacman.x = nextX;
         pacman.y = nextY;
-        pacman.direction = pacman.desiredDirection; // Update arah aktual
-    } else {
-        // Jika desiredDirection tidak valid, coba lanjutkan dengan arah saat ini
-        nextX = pacman.x;
-        nextY = pacman.y;
-        if (pacman.direction === 'up') nextY--;
-        else if (pacman.direction === 'down') nextY++;
-        else if (pacman.direction === 'left') nextX--;
-        else if (pacman.direction === 'right') nextX++;
+        pacman.direction = pacman.desiredDirection;
+        return;
+    }
 
-        if (maze[nextY] && maze[nextY][nextX] !== 1) {
-            pacman.x = nextX;
-            pacman.y = nextY;
-        }
+    // 2. Jika tidak bisa, coba lanjutkan dengan arah saat ini (direction)
+    ({ nextX, nextY } = getNextPosition(pacman, pacman.direction));
+    if (canMove(nextX, nextY)) {
+        pacman.x = nextX;
+        pacman.y = nextY;
     }
 }
 
 function eatFood() {
     if (maze[pacman.y][pacman.x] === 2) {
-        maze[pacman.y][pacman.x] = 0; // Hapus makanan
+        maze[pacman.y][pacman.x] = 0; 
         score += 10;
+        foodEaten++;
         scoreDisplay.textContent = `SKOR: ${score}`;
-        totalFood--; // Kurangi hitungan makanan
     }
 }
 
 function checkWinCondition() {
-    if (maze[pacman.y][pacman.x] === 3) { // Pac-Man mencapai pintu keluar
-        if (totalFood <= 0) { // Hanya bisa keluar jika semua makanan sudah dimakan
+    if (maze[pacman.y][pacman.x] === 3) { // Pac-Man mencapai Pintu Keluar
+        if (foodEaten === totalFood) { 
             clearInterval(gameInterval);
-            setTimeout(() => {
-                alert(`SELAMAT! Anda berhasil keluar dengan skor ${score}!`);
-                resetGame();
-            }, 100);
-        } else {
-            // Opsional: berikan pesan bahwa masih ada makanan
-            // console.log("Anda harus makan semua makanan sebelum keluar!");
-        }
+            finalScoreDisplay.textContent = `Skor Akhir: ${score}. SEMPURNA!`;
+            overlay.style.display = 'flex';
+        } 
+        // Jika makanan belum habis, Pac-Man hanya berdiri di pintu keluar
     }
 }
 
-
 function moveGhost() {
-    // AI sederhana: hantu mencoba bergerak menuju Pac-Man
-    // Ini adalah implementasi AI yang sangat dasar.
-    // Hantu akan langsung bergerak ke Pac-Man jika tidak ada tembok.
+    // AI sederhana: Hantu (merah) selalu mencoba menuju Pac-Man
+    let validMoves = [];
     
-    // Tentukan arah yang lebih baik: horizontal atau vertikal?
-    let possibleMoves = [];
+    // Prioritas 1: Bergerak menuju Pac-Man (vertikal/horizontal)
+    if (ghost.x < pacman.x && canMove(ghost.x + 1, ghost.y)) validMoves.push('right');
+    if (ghost.x > pacman.x && canMove(ghost.x - 1, ghost.y)) validMoves.push('left');
+    if (ghost.y < pacman.y && canMove(ghost.x, ghost.y + 1)) validMoves.push('down');
+    if (ghost.y > pacman.y && canMove(ghost.x, ghost.y - 1)) validMoves.push('up');
 
-    // Prioritaskan bergerak menuju Pac-Man
-    if (ghost.x < pacman.x && maze[ghost.y][ghost.x + 1] !== 1) possibleMoves.push('right');
-    if (ghost.x > pacman.x && maze[ghost.y][ghost.x - 1] !== 1) possibleMoves.push('left');
-    if (ghost.y < pacman.y && maze[ghost.y + 1][ghost.x] !== 1) possibleMoves.push('down');
-    if (ghost.y > pacman.y && maze[ghost.y - 1][ghost.x] !== 1) possibleMoves.push('up');
+    // Filter agar hantu tidak langsung berbalik arah
+    validMoves = validMoves.filter(dir => {
+        if (ghost.direction === 'up' && dir === 'down') return false;
+        if (ghost.direction === 'down' && dir === 'up') return false;
+        if (ghost.direction === 'left' && dir === 'right') return false;
+        if (ghost.direction === 'right' && dir === 'left') return false;
+        return true;
+    });
 
-    // Jika ada gerakan yang menuntun ke Pac-Man, pilih secara acak dari itu
-    if (possibleMoves.length > 0) {
-        ghost.direction = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    let chosenDirection = ghost.direction;
+    if (validMoves.length > 0) {
+        // Jika ada jalur bagus, pilih secara acak dari yang terbaik (memberi sedikit randomness)
+        chosenDirection = validMoves[Math.floor(Math.random() * validMoves.length)];
     } else {
-        // Jika tidak ada jalur langsung ke Pac-Man, bergerak secara acak
-        let validDirections = [];
-        if (maze[ghost.y][ghost.x + 1] !== 1) validDirections.push('right');
-        if (maze[ghost.y][ghost.x - 1] !== 1) validDirections.push('left');
-        if (maze[ghost.y + 1] && maze[ghost.y + 1][ghost.x] !== 1) validDirections.push('down');
-        if (maze[ghost.y - 1] && maze[ghost.y - 1][ghost.x] !== 1) validDirections.push('up');
-
-        // Pastikan hantu tidak langsung berbalik arah
-        validDirections = validDirections.filter(dir => {
-            if (ghost.direction === 'up' && dir === 'down') return false;
-            if (ghost.direction === 'down' && dir === 'up') return false;
-            if (ghost.direction === 'left' && dir === 'right') return false;
-            if (ghost.direction === 'right' && dir === 'left') return false;
-            return true;
-        });
-
-        if (validDirections.length > 0) {
-            ghost.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+        // Jika terpojok, pilih arah valid acak
+        let allValid = [];
+        if (canMove(ghost.x + 1, ghost.y)) allValid.push('right');
+        if (canMove(ghost.x - 1, ghost.y)) allValid.push('left');
+        if (canMove(ghost.x, ghost.y + 1)) allValid.push('down');
+        if (canMove(ghost.x, ghost.y - 1)) allValid.push('up');
+        
+        if (allValid.length > 0) {
+            chosenDirection = allValid[Math.floor(Math.random() * allValid.length)];
         }
     }
 
-    // Lakukan pergerakan
-    let nextX = ghost.x;
-    let nextY = ghost.y;
-
-    if (ghost.direction === 'up') nextY--;
-    else if (ghost.direction === 'down') nextY++;
-    else if (ghost.direction === 'left') nextX--;
-    else if (ghost.direction === 'right') nextX++;
-
-    if (maze[nextY] && maze[nextY][nextX] !== 1) {
+    let { nextX, nextY } = getNextPosition(ghost, chosenDirection);
+    
+    if (canMove(nextX, nextY)) {
         ghost.x = nextX;
         ghost.y = nextY;
+        ghost.direction = chosenDirection;
     }
+    // Catatan: Hantu mengabaikan Titik Makanan (bola putih) karena logika canMove hanya memeriksa Tembok (1)
 }
 
 
 function checkCollision() {
-    // Periksa tabrakan Pac-Man dengan Hantu
+    // Tabrakan terjadi jika posisi Pac-Man dan Hantu sama
     if (pacman.x === ghost.x && pacman.y === ghost.y) {
         gameOver();
     }
 }
 
 function gameOver() {
-    clearInterval(gameInterval); // Hentikan game loop
-    setTimeout(() => { // Tunda alert sedikit agar rendering selesai
-        alert(`GAME OVER! Anda tersentuh hantu. Skor Anda: ${score}`);
-        resetGame();
-    }, 100);
+    clearInterval(gameInterval); 
+    finalScoreDisplay.textContent = `Skor Akhir: ${score}`;
+    overlay.style.display = 'flex'; // Tampilkan popup
 }
 
-function resetGame() {
-    // Reset maze ke kondisi awal
+window.resetGame = function() { // Dibuat global agar bisa dipanggil dari HTML
+    // Sembunyikan popup
+    overlay.style.display = 'none';
+
+    // Reset maze, Pac-Man, Hantu, dan Skor
     maze = JSON.parse(JSON.stringify(initialMaze));
+    pacman = { x: 1, y: 1, radius: TILE_SIZE / 2 - 2, direction: 'right', desiredDirection: 'right', speed: 1 };
+    ghost = { x: 7, y: 4, color: 'red', direction: 'left', speed: 1 }; 
     
-    // Reset Pac-Man
-    pacman.x = 1;
-    pacman.y = 1;
-    pacman.direction = 'right';
-    pacman.desiredDirection = 'right';
-
-    // Reset Hantu
-    ghost.x = 7;
-    ghost.y = 4;
-    ghost.direction = 'left';
-
-    // Reset Skor
     score = 0;
-    scoreDisplay.textContent = `SKOR: ${score}`;
-
-    // Hitung ulang total makanan
-    totalFood = 0;
-    for(let r=0; r < maze.length; r++) {
-        for(let c=0; c < maze[r].length; c++) {
-            if(initialMaze[r][c] === 2) totalFood++;
-        }
-    }
+    foodEaten = 0;
+    scoreDisplay.textContent = `SKOR: 0`;
 
     // Mulai ulang game loop
     startGameLoop();
@@ -324,26 +279,26 @@ function resetGame() {
 function updateGameLogic() {
     movePacman();
     eatFood();
-    moveGhost(); // Hantu bergerak setiap frame
+    moveGhost(); 
     checkCollision();
     checkWinCondition();
 }
 
 function drawGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Bersihkan layar
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
     drawMaze();
     drawPacman();
     drawGhost();
 }
 
 function startGameLoop() {
-    // Menggunakan setInterval untuk game loop dengan FPS yang terkontrol
-    clearInterval(gameInterval); // Pastikan tidak ada interval lama yang berjalan
+    clearInterval(gameInterval); 
+    // Menggunakan setInterval untuk mengontrol kecepatan Pac-Man dan Hantu
     gameInterval = setInterval(() => {
         updateGameLogic();
         drawGame();
-    }, 1000 / GAME_FPS); // Waktu dalam milidetik per frame
+    }, 1000 / GAME_FPS); 
 }
 
-// --- MULAI PERMAINAN PERTAMA KALI ---
+// Mulai Permainan
 startGameLoop();
