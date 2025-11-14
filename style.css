@@ -13,6 +13,8 @@ body {
 .game-container {
     border: 5px solid blue;
     background-color: black;
+    position: relative; /* Penting untuk mengatur z-index */
+    z-index: 1; /* Agar di bawah kontroler */
 }
 
 #pacman-canvas {
@@ -26,17 +28,28 @@ body {
     text-align: center;
 }
 
-/* --- STYLING KONTROL MOBILE (PENTING!) --- */
+/* --- STYLING KONTROL MOBILE --- */
 
 .mobile-controls {
-    display: none; /* Sembunyikan di desktop */
+    display: none; /* Sembunyikan di desktop secara default */
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 1000; /* Pastikan di atas canvas */
     opacity: 0.85;
     padding: 10px;
+    background: rgba(0, 0, 0, 0.6); /* Latar belakang agak gelap */
     border-radius: 10px;
+    /* Membuat layout D-Pad */
+    display: grid;
+    grid-template-areas: 
+        ". up ."
+        "left . right"
+        ". down .";
+    gap: 5px; /* Jarak antar tombol */
+    width: 200px; /* Lebar total D-Pad */
+    justify-items: center;
+    align-items: center;
 }
 
 .control-btn {
@@ -46,24 +59,24 @@ body {
     background-color: #444;
     color: white;
     border: none;
-    border-radius: 50%;
-    margin: 5px;
-    display: block;
+    border-radius: 50%; /* Membuat tombol bulat */
     cursor: pointer;
     user-select: none;
-    touch-action: manipulation; /* Penting untuk respons sentuhan cepat */
-}
-
-.horizontal-btns {
+    touch-action: manipulation;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
+
+/* Posisi tombol dalam grid */
+#up-btn { grid-area: up; }
+#down-btn { grid-area: down; }
+#left-btn { grid-area: left; }
+#right-btn { grid-area: right; }
 
 /* Media Query: Hanya tampilkan kontroler pada layar kecil (mobile) */
 @media (max-width: 768px) {
     .mobile-controls {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        display: grid; /* Tampilkan sebagai grid di mobile */
     }
 }
