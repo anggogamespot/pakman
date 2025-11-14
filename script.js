@@ -1,268 +1,159 @@
-const canvas = document.getElementById('pacman-canvas');
-const ctx = canvas.getContext('2d');
-const scoreDisplay = document.getElementById('score');
-const overlay = document.getElementById('game-overlay');
-const finalScoreDisplay = document.getElementById('final-score');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-// --- KONFIGURASI GAME ---
-const TILE_SIZE = 30; // Ukuran satu ubin dalam piksel
-const GAME_FPS = 10;
-let gameInterval;
-let foodEaten = 0;
-let totalFood = 0;
+const tileSize = 40;
 
-// 0: Jalan Kosong, 1: Tembok, 2: Titik Makanan, 3: Pintu Keluar
-// Catatan: Tata letak ini disederhanakan dari gambar asli (25x25)
-let maze = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1],
-    [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
-    [1,2,1,1,1,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,1,1,1,2,1],
-    [1,2,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,1,1,2,1],
-    [1,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-    [1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1],
-    [1,1,1,1,1,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,1,1,1,1,1],
-    [1,1,1,1,1,2,1,2,1,1,1,0,0,0,1,1,1,2,1,2,1,1,1,1,1],
-    [1,2,2,2,2,2,2,2,1,0,0,0,0,0,0,0,1,2,2,2,2,2,2,2,1],
-    [1,2,1,1,1,2,1,2,1,0,1,1,1,1,1,0,1,2,1,2,1,1,1,2,1],
-    [1,2,1,1,1,2,1,2,2,0,1,1,1,1,1,0,2,2,1,2,1,1,1,2,1],
-    [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-    [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
-    [1,2,1,1,1,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,1,1,1,2,1],
-    [1,2,2,2,1,2,2,2,1,1,1,1,1,1,1,1,1,2,1,2,1,2,2,2,1],
-    [1,1,1,2,1,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,1,2,1,1,1],
-    [1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1],
-    [1,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1],
-    [1,2,1,1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1,1,2,1],
-    [1,2,1,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,1,2,1],
-    [1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,2,1],
-    [1,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1], // Pintu Keluar di bawah tengah
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+// 14x14 grid map
+// 1 = wall, 0 = pellet
+const map = [
+ [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+ [1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+ [1,0,1,1,1,0,1,0,1,1,1,1,0,1],
+ [1,0,0,0,1,0,0,0,0,0,0,1,0,1],
+ [1,1,1,0,1,1,1,1,1,1,0,1,0,1],
+ [1,0,0,0,0,0,1,0,0,1,0,1,0,1],
+ [1,0,1,1,1,0,1,0,1,1,0,1,0,1],
+ [1,0,0,0,1,0,0,0,0,0,0,1,0,1],
+ [1,1,1,0,1,1,1,1,1,1,0,1,0,1],
+ [1,0,0,0,0,0,1,0,0,1,0,1,0,1],
+ [1,0,1,1,1,0,1,0,1,1,0,1,0,1],
+ [1,0,0,0,1,0,0,0,0,0,0,1,0,1],
+ [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+ [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
-const initialMaze = JSON.parse(JSON.stringify(maze));
 
-// Hitung total makanan
-maze.forEach(row => row.forEach(tile => {
-    if(tile === 2) totalFood++;
-}));
+let player = { x: 1, y: 1, dx: 0, dy: 0 };
+let ghost = { x: 12, y: 12, dirTimer: 0 };
 
-
-// --- PAC-MAN & HANTU ---
-// Posisi awal Pac-Man dan Hantu disesuaikan dengan labirin 25x25
-let pacman = { x: 1, y: 1, radius: TILE_SIZE / 2 - 2, direction: 'right', desiredDirection: 'right', speed: 1 };
-let ghost = { x: 12, y: 8, color: 'red', direction: 'left', speed: 1 }; // Di tengah area Hantu
-let score = 0;
-
-
-// --- GAME LOOP & LOGIKA ---
-
-function drawMaze() {
-    for (let y = 0; y < maze.length; y++) {
-        for (let x = 0; x < maze[y].length; x++) {
-            const tile = maze[y][x];
-            const posX = x * TILE_SIZE;
-            const posY = y * TILE_SIZE;
-
-            if (tile === 1) { // Tembok
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
-            } else if (tile === 2) { // Titik Makanan
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(posX + TILE_SIZE / 2, posY + TILE_SIZE / 2, 3, 0, Math.PI * 2);
-                ctx.fill();
-            } else if (tile === 3) { // Pintu Keluar (Ubin Hijau)
-                ctx.fillStyle = 'green';
-                ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
+function drawMap() {
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+            if (map[y][x] === 1) {
+                ctx.fillStyle = "#003cff";
+                ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
             } else {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(posX, posY, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = "#000";
+                ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+
+                // pellets
+                if (map[y][x] === 0) {
+                    ctx.fillStyle = "yellow";
+                    ctx.beginPath();
+                    ctx.arc(
+                        x * tileSize + tileSize / 2,
+                        y * tileSize + tileSize / 2,
+                        5,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
             }
         }
     }
 }
 
-// (Fungsi drawPacman, drawGhost tetap sama)
-function drawPacman() {
-    const center_x = pacman.x * TILE_SIZE + TILE_SIZE / 2;
-    const center_y = pacman.y * TILE_SIZE + TILE_SIZE / 2;
-    
-    ctx.fillStyle = 'yellow';
+function drawPlayer() {
+    ctx.fillStyle = "yellow";
     ctx.beginPath();
-    ctx.arc(center_x, center_y, pacman.radius, 0, Math.PI * 2);
+    ctx.arc(
+        player.x * tileSize + tileSize / 2,
+        player.y * tileSize + tileSize / 2,
+        15,
+        0,
+        Math.PI * 2
+    );
     ctx.fill();
 }
 
 function drawGhost() {
-    const center_x = ghost.x * TILE_SIZE + TILE_SIZE / 2;
-    const center_y = ghost.y * TILE_SIZE + TILE_SIZE / 2;
-    const size = TILE_SIZE * 0.9;
-    
-    ctx.fillStyle = ghost.color;
-    
+    ctx.fillStyle = "red";
     ctx.beginPath();
-    ctx.arc(center_x, center_y, size / 2, Math.PI, 0, false); 
-    ctx.rect(center_x - size / 2, center_y, size, size * 0.4); 
+    ctx.arc(
+        ghost.x * tileSize + tileSize / 2,
+        ghost.y * tileSize + tileSize / 2,
+        15,
+        0,
+        Math.PI * 2
+    );
     ctx.fill();
 }
 
-// (Fungsi getNextPosition, canMove, handleDirectionChange, eatFood, checkWinCondition, checkCollision tetap sama)
+function movePlayer() {
+    let nx = player.x + player.dx;
+    let ny = player.y + player.dy;
 
-function getNextPosition(obj, direction) {
-    let nextX = obj.x;
-    let nextY = obj.y;
+    if (map[ny][nx] !== 1) {
+        player.x = nx;
+        player.y = ny;
 
-    if (direction === 'up') nextY--;
-    else if (direction === 'down') nextY++;
-    else if (direction === 'left') nextX--;
-    else if (direction === 'right') nextX++;
-
-    return { nextX, nextY };
-}
-
-function canMove(x, y) {
-    if (y < 0 || y >= maze.length || x < 0 || x >= maze[0].length) return false;
-    return maze[y][x] !== 1;
-}
-
-function handleDirectionChange(newDirection) {
-    pacman.desiredDirection = newDirection;
-}
-
-function eatFood() {
-    if (maze[pacman.y][pacman.x] === 2) {
-        maze[pacman.y][pacman.x] = 0; 
-        score += 10;
-        foodEaten++;
-        scoreDisplay.textContent = `SKOR: ${score}`;
-    }
-}
-
-function checkWinCondition() {
-    if (maze[pacman.y][pacman.x] === 3) { 
-        if (foodEaten === totalFood) { 
-            clearInterval(gameInterval);
-            finalScoreDisplay.textContent = `Skor Akhir: ${score}. SEMPURNA!`;
-            overlay.style.display = 'flex';
-        } 
-    }
-}
-
-function checkCollision() {
-    if (pacman.x === ghost.x && pacman.y === ghost.y) {
-        gameOver();
-    }
-}
-
-function movePacman() {
-    let { nextX, nextY } = getNextPosition(pacman, pacman.desiredDirection);
-
-    // 1. Coba bergerak sesuai desiredDirection
-    if (canMove(nextX, nextY)) {
-        pacman.x = nextX;
-        pacman.y = nextY;
-        pacman.direction = pacman.desiredDirection;
-        return;
-    }
-
-    // 2. Jika tidak bisa, coba lanjutkan dengan arah saat ini
-    ({ nextX, nextY } = getNextPosition(pacman, pacman.direction));
-    if (canMove(nextX, nextY)) {
-        pacman.x = nextX;
-        pacman.y = nextY;
+        // eat pellet
+        if (map[ny][nx] === 0)
+            map[ny][nx] = 2; 
     }
 }
 
 function moveGhost() {
-    let validMoves = [];
-    
-    // Prioritas: Mengejar Pac-Man
-    if (ghost.x < pacman.x && canMove(ghost.x + 1, ghost.y)) validMoves.push('right');
-    if (ghost.x > pacman.x && canMove(ghost.x - 1, ghost.y)) validMoves.push('left');
-    if (ghost.y < pacman.y && canMove(ghost.x, ghost.y + 1)) validMoves.push('down');
-    if (ghost.y > pacman.y && canMove(ghost.x, ghost.y - 1)) validMoves.push('up');
-
-    // Filter balik arah
-    validMoves = validMoves.filter(dir => {
-        if (ghost.direction === 'up' && dir === 'down') return false;
-        if (ghost.direction === 'down' && dir === 'up') return false;
-        if (ghost.direction === 'left' && dir === 'right') return false;
-        if (ghost.direction === 'right' && dir === 'left') return false;
-        return true;
-    });
-
-    let chosenDirection = ghost.direction;
-    if (validMoves.length > 0) {
-        chosenDirection = validMoves[Math.floor(Math.random() * validMoves.length)];
-    } else {
-        // Jika terpojok, pilih arah valid acak
-        let allValid = [];
-        if (canMove(ghost.x + 1, ghost.y)) allValid.push('right');
-        if (canMove(ghost.x - 1, ghost.y)) allValid.push('left');
-        if (canMove(ghost.x, ghost.y + 1)) allValid.push('down');
-        if (canMove(ghost.x, ghost.y - 1)) allValid.push('up');
-        
-        if (allValid.length > 0) {
-            chosenDirection = allValid[Math.floor(Math.random() * allValid.length)];
-        }
+    ghost.dirTimer--;
+    if (ghost.dirTimer <= 0) {
+        // choose new random direction
+        const dirs = [
+            { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+            { dx: 0, dy: 1 }, { dx: 0, dy: -1 }
+        ];
+        const d = dirs[Math.floor(Math.random() * dirs.length)];
+        ghost.dx = d.dx;
+        ghost.dy = d.dy;
+        ghost.dirTimer = 20;
     }
 
-    let { nextX, nextY } = getNextPosition(ghost, chosenDirection);
-    
-    if (canMove(nextX, nextY)) {
-        ghost.x = nextX;
-        ghost.y = nextY;
-        ghost.direction = chosenDirection;
+    let nx = ghost.x + ghost.dx;
+    let ny = ghost.y + ghost.dy;
+
+    if (map[ny][nx] !== 1) {
+        ghost.x = nx;
+        ghost.y = ny;
     }
 }
 
+function checkWinLose() {
+    // lose
+    if (player.x === ghost.x && player.y === ghost.y) {
+        alert("Kamu kalah!");
+        location.reload();
+    }
 
-function gameOver() {
-    clearInterval(gameInterval); 
-    finalScoreDisplay.textContent = `Skor Akhir: ${score}`;
-    overlay.style.display = 'flex'; 
+    // win
+    let remaining = 0;
+    for (let row of map)
+        for (let cell of row)
+            if (cell === 0) remaining++;
+
+    if (remaining === 0) {
+        alert("Kamu menang!");
+        location.reload();
+    }
 }
 
-window.resetGame = function() {
-    overlay.style.display = 'none';
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Reset Labirin, Karakter, dan Skor
-    maze = JSON.parse(JSON.stringify(initialMaze));
-    pacman = { x: 1, y: 1, radius: TILE_SIZE / 2 - 2, direction: 'right', desiredDirection: 'right', speed: 1 };
-    ghost = { x: 12, y: 8, color: 'red', direction: 'left', speed: 1 }; 
-    
-    score = 0;
-    foodEaten = 0;
-    scoreDisplay.textContent = `SKOR: 0`;
-
-    startGameLoop();
-}
-
-function updateGameLogic() {
-    movePacman();
-    eatFood();
-    moveGhost(); 
-    checkCollision();
-    checkWinCondition();
-}
-
-function drawGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    drawMaze();
-    drawPacman();
+    drawMap();
+    drawPlayer();
     drawGhost();
+
+    movePlayer();
+    moveGhost();
+    checkWinLose();
+
+    requestAnimationFrame(gameLoop);
 }
 
-function startGameLoop() {
-    clearInterval(gameInterval); 
-    gameInterval = setInterval(() => {
-        updateGameLogic();
-        drawGame();
-    }, 1000 / GAME_FPS); 
-}
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp")    { player.dx = 0; player.dy = -1; }
+    if (e.key === "ArrowDown")  { player.dx = 0; player.dy = 1; }
+    if (e.key === "ArrowLeft")  { player.dx = -1; player.dy = 0; }
+    if (e.key === "ArrowRight") { player.dx = 1; player.dy = 0; }
+});
 
-// Event listener keyboard dan touch tetap ada di file ini.
-
-// --- MULAI PERMAINAN ---
-startGameLoop();
+gameLoop();
