@@ -2,30 +2,34 @@ body {
     background: #000;
     color: #fff;
     text-align: center;
-    font-family: Arial, sans-serif;
+    font-family: Arial;
+}
+
+#ui {
+    font-size: 20px;
+    margin: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 25px;
 }
 
 canvas {
+    background: #000;
     border: 3px solid #fff;
     margin-top: 10px;
 }
 
-#ui {
-    margin: 10px;
-    font-size: 22px;
-}
-
 #controls {
     margin-top: 20px;
-    display: inline-block;
+    user-select: none;
 }
 
 #controls button {
     width: 70px;
     height: 70px;
-    font-size: 30px;
     margin: 5px;
-    border-radius: 10px;
+    font-size: 35px;
+    border-radius: 8px;
     background: #222;
     color: white;
     border: 2px solid #555;
