@@ -78,3 +78,76 @@ function gameLoop() {
 
 // Mulai permainan
 gameLoop();
+// --- BAGIAN BARU UNTUK KONTROL MOBILE ---
+
+// Ambil semua tombol kontrol
+const upBtn = document.getElementById('up-btn');
+const downBtn = document.getElementById('down-btn');
+const leftBtn = document.getElementById('left-btn');
+const rightBtn = document.getElementById('right-btn');
+
+// Fungsi untuk memperbarui arah (sama seperti saat menggunakan tombol panah)
+function handleDirectionChange(newDirection) {
+    // Asumsi: Anda memiliki variabel global 'desiredDirection'
+    // yang digunakan oleh Game Loop untuk memindahkan Pac-Man.
+    // Jika Anda menggunakan logika langsung:
+    pacman.direction = newDirection; 
+    // Anda mungkin perlu memanggil fungsi update posisi atau game loop di sini
+    // atau biarkan Game Loop yang menangani pergerakan berikutnya.
+}
+
+// Menambahkan Event Listener untuk setiap tombol
+upBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Mencegah pergerakan layar
+    handleDirectionChange('up');
+});
+upBtn.addEventListener('mousedown', () => {
+    handleDirectionChange('up');
+});
+
+downBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleDirectionChange('down');
+});
+downBtn.addEventListener('mousedown', () => {
+    handleDirectionChange('down');
+});
+
+leftBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleDirectionChange('left');
+});
+leftBtn.addEventListener('mousedown', () => {
+    handleDirectionChange('left');
+});
+
+rightBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleDirectionChange('right');
+});
+rightBtn.addEventListener('mousedown', () => {
+    handleDirectionChange('right');
+});
+
+// Anda mungkin juga ingin mengganti event listener keyboard Anda 
+// dengan fungsi `handleDirectionChange` yang sama.
+
+// Contoh modifikasi di event listener keyboard (di script.js Anda):
+/*
+document.addEventListener('keydown', (e) => {
+    switch (e.key) {
+        case 'ArrowUp':
+            handleDirectionChange('up');
+            break;
+        case 'ArrowDown':
+            handleDirectionChange('down');
+            break;
+        case 'ArrowLeft':
+            handleDirectionChange('left');
+            break;
+        case 'ArrowRight':
+            handleDirectionChange('right');
+            break;
+    }
+});
+*/
