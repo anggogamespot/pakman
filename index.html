@@ -1,34 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Ultimate Pacman</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Clone</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<h1>Ultimate Pacman</h1>
-
-<div id="ui">
-    <span id="score">Score: 0</span>
-    <span id="lives">Lives: 3</span>
-    <span id="level">Level: 1</span>
-    <span id="highscore">Highscore: 0</span>
-</div>
-
-<canvas id="game" width="560" height="560"></canvas>
-
-<!-- Mobile D-pad -->
-<div id="controls">
-    <button data-dir="up">▲</button>
-    <div>
-        <button data-dir="left">◀</button>
-        <button data-dir="right">▶</button>
+    <div id="game-container">
+        <h1>Pac-Man Sederhana</h1>
+        <p>Skor: <span id="score">0</span></p>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
-    <button data-dir="down">▼</button>
-</div>
-
-<script src="game.js"></script>
-
+    
+    <script src="script.js"></script>
 </body>
 </html>
