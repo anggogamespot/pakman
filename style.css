@@ -20,7 +20,12 @@ h1 {
 
 #gameCanvas {
     /* Memberikan batas agar canvas terlihat */
-    border: 3px solid blue;
+    border: 3px solid #33f;
     background-color: black;
-    display: block; /* Penting untuk menghilangkan margin bawah yang tidak diinginkan */
+    display: block;
+}
+
+#status {
+    color: limegreen;
+    font-weight: bold;
 }
