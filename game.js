@@ -1,96 +1,3 @@
-// --- Inisialisasi dan Konfigurasi ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreDisplay = document.getElementById('score');
-
-const TILE_SIZE = 20; // Ukuran setiap kotak (tile) dalam piksel
-const MAP_SIZE = canvas.width / TILE_SIZE; // 400 / 20 = 20x20
-
-let score = 0;
-let pacman = { x: 1, y: 1, direction: 'right', nextDirection: 'right', size: TILE_SIZE / 2 };
-
-// Peta: 0 = Kosong (ruang), 1 = Dinding, 2 = Pellet (makanan)
-// Peta 20x20 sederhana
-const map = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1, 2, 1, 1],
-    [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1],
-    [1, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1],
-    [1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1],
-    [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1],
-    [1, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 2, 2, 2, 1],
-    [1, 2, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1],
-    [1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-];
-
-// --- Fungsi Menggambar ---
-
-function drawMap() {
-    for (let y = 0; y < MAP_SIZE; y++) {
-        for (let x = 0; x < MAP_SIZE; x++) {
-            const tile = map[y][x];
-
-            if (tile === 1) { // Dinding
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            } else if (tile === 2) { // Pellet
-                ctx.fillStyle = 'white';
-                // Menggambar lingkaran kecil di tengah tile
-                ctx.beginPath();
-                ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 8, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-    }
-}
-
-function drawPacman() {
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
-    
-    // Logika untuk membuat mulut terbuka (animasi dasar)
-    let startAngle = 0.25 * Math.PI; // Sudut mulai 45 derajat
-    let endAngle = 1.75 * Math.PI;  // Sudut akhir 315 derajat
-
-    // Sesuaikan sudut berdasarkan arah Pac-Man untuk efek visual yang lebih baik
-    if (pacman.direction === 'right') {
-        startAngle = 0.25 * Math.PI; 
-        endAngle = 1.75 * Math.PI;
-    } else if (pacman.direction === 'down') {
-        startAngle = 0.75 * Math.PI; 
-        endAngle = 0.25 * Math.PI;
-    } else if (pacman.direction === 'left') {
-        startAngle = 1.25 * Math.PI; 
-        endAngle = 0.75 * Math.PI;
-    } else if (pacman.direction === 'up') {
-        startAngle = 1.75 * Math.PI; 
-        endAngle = 1.25 * Math.PI;
-    }
-
-    ctx.arc(
-        pacman.x * TILE_SIZE + TILE_SIZE / 2,
-        pacman.y * TILE_SIZE + TILE_SIZE / 2,
-        pacman.size,
-        startAngle,
-        endAngle
-    );
-    ctx.lineTo(pacman.x * TILE_SIZE + TILE_SIZE / 2, pacman.y * TILE_SIZE + TILE_SIZE / 2); // Garis ke tengah untuk efek mulut
-    ctx.fill();
-}
-
-// --- Fungsi Logika Game ---
-
 function isWall(x, y) {
     // Memastikan koordinat berada dalam batas
     if (x < 0 || x >= MAP_SIZE || y < 0 || y >= MAP_SIZE) {
@@ -99,7 +6,6 @@ function isWall(x, y) {
     // Mengembalikan true jika tile adalah Dinding (kode 1)
     return map[y][x] === 1; 
 }
-
 function updatePacman() {
     let targetX = pacman.x;
     let targetY = pacman.y;
@@ -155,32 +61,7 @@ function updatePacman() {
         scoreDisplay.textContent = score;
     }
 }
-
-// --- Input Pengguna ---
-
-document.addEventListener('keydown', (e) => {
-    switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-            pacman.nextDirection = 'up';
-            break;
-        case 'ArrowDown':
-        case 's':
-            pacman.nextDirection = 'down';
-            break;
-        case 'ArrowLeft':
-        case 'a':
-            pacman.nextDirection = 'left';
-            break;
-        case 'ArrowRight':
-        case 'd':
-            pacman.nextDirection = 'right';
-            break;
-    }
-});
-
-// --- Loop Game Utama ---
-
+// ...
 function gameLoop() {
     // 1. Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -192,12 +73,9 @@ function gameLoop() {
     drawMap();
     drawPacman();
 
-    // Loop berulang
-    // Menggunakan timeout 100ms untuk kontrol pergerakan berbasis tile
+    // Loop berulang dengan penundaan 100ms
     setTimeout(() => {
         requestAnimationFrame(gameLoop);
     }, 100); 
 }
-
-// Mulai game saat halaman dimuat
-gameLoop();
+// ...
