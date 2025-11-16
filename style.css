@@ -1,41 +1,26 @@
 body {
-    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #000;
     color: #fff;
+    font-family: sans-serif;
+    flex-direction: column;
+}
+
+#game-container {
     text-align: center;
-    font-family: Arial;
 }
 
-#ui {
-    font-size: 20px;
-    margin: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 25px;
+h1 {
+    color: yellow;
 }
 
-canvas {
-    background: #000;
-    border: 3px solid #fff;
-    margin-top: 10px;
-}
-
-#controls {
-    margin-top: 20px;
-    user-select: none;
-}
-
-#controls button {
-    width: 70px;
-    height: 70px;
-    margin: 5px;
-    font-size: 35px;
-    border-radius: 8px;
-    background: #222;
-    color: white;
-    border: 2px solid #555;
-}
-
-#controls > div {
-    display: flex;
-    justify-content: center;
+#gameCanvas {
+    /* Memberikan batas agar canvas terlihat */
+    border: 3px solid blue;
+    background-color: black;
+    display: block; /* Penting untuk menghilangkan margin bawah yang tidak diinginkan */
 }
